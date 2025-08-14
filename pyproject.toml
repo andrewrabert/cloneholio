@@ -2,7 +2,7 @@
 name = "cloneholio"
 dynamic = ["version"]
 description = "I am cloneholio! I need syncing of my repos."
-readme = "README.rst"
+readme = "README.md"
 authors = [
     {name = "Andrew Rabert", email = "ar@nullsum.net"},
 ]
