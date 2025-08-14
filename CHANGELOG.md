@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.5 (2025-08-14)
+- Require Python>=3.10
+- Replace `pkg_resources` with `importlib.metadata`
+
 ## 0.13.4 (2024-03-12)
 - Fix private GitHub repo retrieval
 
