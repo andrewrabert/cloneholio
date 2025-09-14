@@ -7,8 +7,8 @@ Maintain local backups of *all Git repositories* belonging to a user or group.
 **Features:**
 
 - Supports both GitHub and GitLab.
-- Backup *all repositories* owned by users, groups, and subgroups.
-- Backup individual repositories.
+- Back up *all repositories* owned by users, groups, and subgroups.
+- Back up individual repositories.
 - Scale to a configurable number of processes.
 
 ## Installation
@@ -18,7 +18,7 @@ Maintain local backups of *all Git repositories* belonging to a user or group.
 
 ## Example
 
-This will backup all repositories owned by the [python](https://github.com/python) organization on GitHub.
+This will back up all repositories owned by the [python](https://github.com/python) organization on GitHub.
 
 ```
 $ cloneholio -t TOKEN -p github python
@@ -42,13 +42,14 @@ usage: cloneholio [-h] [-n NUM_PROCESSES] [-d DIRECTORY] -t TOKEN
 Maintain local backups of all Git repositories belonging to a user or group.
 
 Token creation:
-  - GitLab
-    Permissions:  api
-    URL:  https://gitlab.com/profile/personal_access_tokens
 
-  - GitHub
-    Permissions:  repo:status
-    URL:  https://github.com/settings/tokens/new
+- **GitLab**
+  - Permissions: api
+  - URL: https://gitlab.com/profile/personal_access_tokens
+
+- **GitHub**
+  - Permissions: repo:status
+  - URL: https://github.com/settings/tokens/new
 
 positional arguments:
   paths
