@@ -26,24 +26,35 @@ except importlib.metadata.PackageNotFoundError:
 def download_repo(directory, path, url, last_activity_at, default_branch,
                   **kwargs):
     LOGGER.info('Processing %s', path)
+    LOGGER.debug('URL: %s, Default branch: %s, Last activity: %s',
+                url, default_branch, last_activity_at)
     local_path = pathlib.Path(directory, path)
     updated_at = last_activity_at.timestamp() if last_activity_at else None
+    LOGGER.debug('Local path: %s, Updated timestamp: %s', local_path, updated_at)
     try:
         if local_path.exists():
+            LOGGER.debug('Repository already exists locally')
             repo = git.Repo(local_path)
             local_branch = str(repo.active_branch)
+            LOGGER.debug('Current local branch: %s', local_branch)
             if not updated_at or local_path.stat().st_mtime != updated_at \
                     or local_branch != default_branch:
+                LOGGER.debug('Repository needs updating')
                 for remote in repo.remotes:
+                    LOGGER.debug('Updating remote: %s', remote.name)
                     remote.set_url(url)
                     remote.update()
                     if remote.refs:
                         remote.fetch()
                 if repo.branches:
                     if local_branch != default_branch:
+                        LOGGER.debug('Switching from %s to %s', local_branch, default_branch)
                         repo.git.checkout(default_branch)
                     repo.remote().pull()
+            else:
+                LOGGER.debug('Repository is up to date')
         else:
+            LOGGER.debug('Cloning new repository')
             git.Repo.clone_from(url, local_path, **kwargs)
         if updated_at:
             os.utime(local_path,
@@ -161,6 +172,11 @@ Token creation:
         help='Suppress informational output'
     )
     output_mutex.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Enable debug logs'
+    )
+    output_mutex.add_argument(
         '--progress',
         action='store_true',
         help='Show progress bar'
@@ -175,17 +191,24 @@ Token creation:
         action='version',
         version=VERSION
     )
-    parser.add_argument('--all-groups', action='store_true')
+    parser.add_argument('--all', action='store_true', help='Get all groups (GitLab) or organizations (GitHub)')
     parser.add_argument('paths', nargs='*')
 
     args = parser.parse_args()
 
-    if not args.all_groups and not args.paths:
-        parser.error('must specifiy at least --all-groups or a path(s)')
+    if not args.all and not args.paths:
+        parser.error('must specifiy at least --all or a path(s)')
         parser.exit(1)
 
+    if args.verbose:
+        log_level = logging.DEBUG
+    elif args.quiet or args.progress:
+        log_level = logging.WARN
+    else:
+        log_level = logging.INFO
+
     logging.basicConfig(
-        level=logging.WARN if args.quiet or args.progress else logging.INFO,
+        level=log_level,
         format='%(levelname)s %(message)s')
 
     directory = pathlib.Path(args.directory).absolute()
@@ -197,23 +220,43 @@ Token creation:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     paths = set(args.paths)
-    if args.all_groups:
-        paths.update(
-            path.split('/')[0].lower()
-            for path in cloneholio.gitlab.get_groups(
-                args.token, args.insecure, args.base_url)
-        )
+    LOGGER.debug('Initial paths from arguments: %s', paths)
+    if args.all:
+        if args.provider == 'gitlab':
+            LOGGER.debug('Getting all groups from GitLab')
+            paths.update(
+                path.split('/')[0].lower()
+                for path in cloneholio.gitlab.get_groups(
+                    args.token, args.insecure, args.base_url)
+            )
+        elif args.provider == 'github':
+            LOGGER.debug('Getting all organizations from GitHub - using optimized single call')
+            # For GitHub, use a single optimized call instead of per-organization calls
+            paths = {None}  # Use None as a special marker for the all=True call
+        else:
+            LOGGER.warning('--all is only supported for GitHub and GitLab providers')
+        LOGGER.debug('Paths after adding all: %s', paths)
 
-    repos = itertools.chain(*[
-        PROVIDER_FUNCTIONS[args.provider](
-            path, args.token, args.insecure, args.base_url,
+    # Handle GitHub --all case with optimized single API call
+    if args.all and args.provider == 'github':
+        repos = PROVIDER_FUNCTIONS[args.provider](
+            None, args.token, args.insecure, args.base_url,
             archived=False if args.exclude_archived else None,
-            is_fork=False if args.exclude_forks else None
+            is_fork=False if args.exclude_forks else None,
+            all=True
         )
-        for path in paths
-    ])
+    else:
+        repos = itertools.chain(*[
+            PROVIDER_FUNCTIONS[args.provider](
+                path, args.token, args.insecure, args.base_url,
+                archived=False if args.exclude_archived else None,
+                is_fork=False if args.exclude_forks else None
+            )
+            for path in paths
+        ])
 
     exclude = set(args.exclude)
+    LOGGER.debug('Excluded paths: %s', exclude)
     targets = set()
     for path, url, last_activity_at, default_branch in repos:
         split_path = path.split('/')
@@ -225,11 +268,15 @@ Token creation:
             if args.list:
                 print(path)
             targets.add((path, url, last_activity_at, default_branch))
+        else:
+            LOGGER.debug('Excluding repository: %s (matches exclusion pattern)', path)
 
     if args.list:
         parser.exit()
 
     total_repos = len(targets)
+    LOGGER.debug('Total repositories to process: %d', total_repos)
+    LOGGER.debug('Using %d processes', args.num_processes)
     with concurrent.futures.ProcessPoolExecutor(
             args.num_processes) as executor:
 

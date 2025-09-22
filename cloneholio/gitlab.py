@@ -15,7 +15,7 @@ def get_groups(token, insecure, base_url):
 
 
 def get_repos(path, token, insecure=False, base_url=None, archived=None,
-              is_fork=None):
+              is_fork=None, all=False):
     api = GitLab(
         url=base_url,
         token=token)
