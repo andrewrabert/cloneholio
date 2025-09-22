@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.13.5 (2025-08-14)
+## 0.15.0 (2025-09-22)
+- Add support for GitHub Enterprise
+- Add `--all` flag
+- Remove `--all-groups` (replaced with `--all`)
+
+## 0.14.0 (2025-08-14)
 - Require Python>=3.10
 - Replace `pkg_resources` with `importlib.metadata`
 
