@@ -23,9 +23,17 @@ except importlib.metadata.PackageNotFoundError:
     VERSION = "unknown"
 
 
-def download_repo(directory, path, url, last_activity_at, default_branch, **kwargs):
-    LOGGER.info("Processing %s", path)
-    LOGGER.debug(
+def download_repo(
+    directory, path, url, last_activity_at, default_branch, log_level=None, **kwargs
+):
+    # Configure logging in the child process if log_level is provided
+    if log_level is not None:
+        logging.basicConfig(level=log_level, format="%(levelname)s %(message)s")
+
+    logger = logging.getLogger("cloneholio")
+
+    logger.debug("Processing %s", path)
+    logger.debug(
         "URL: %s, Default branch: %s, Last activity: %s",
         url,
         default_branch,
@@ -33,44 +41,46 @@ def download_repo(directory, path, url, last_activity_at, default_branch, **kwar
     )
     local_path = pathlib.Path(directory, path)
     updated_at = last_activity_at.timestamp() if last_activity_at else None
-    LOGGER.debug("Local path: %s, Updated timestamp: %s", local_path, updated_at)
+    logger.debug("Local path: %s, Updated timestamp: %s", local_path, updated_at)
     try:
         if local_path.exists():
-            LOGGER.debug("Repository already exists locally")
+            logger.debug("Repository already exists locally")
             repo = git.Repo(local_path)
             local_branch = str(repo.active_branch)
-            LOGGER.debug("Current local branch: %s", local_branch)
+            logger.debug("Current local branch: %s", local_branch)
             if (
                 not updated_at
                 or local_path.stat().st_mtime != updated_at
                 or local_branch != default_branch
             ):
-                LOGGER.debug("Repository needs updating")
                 for remote in repo.remotes:
-                    LOGGER.debug("Updating remote: %s", remote.name)
+                    logger.debug("Updating remote: %s", remote.name)
                     remote.set_url(url)
                     remote.update()
                     if remote.refs:
                         remote.fetch()
                 if repo.branches:
                     if local_branch != default_branch:
-                        LOGGER.debug(
+                        logger.warning(
                             "Switching from %s to %s", local_branch, default_branch
                         )
                         repo.git.checkout(default_branch)
+                    logger.info("Pulling %s", path)
                     repo.remote().pull()
+                logger.debug("Running git gc on updated repository")
+                repo.git.gc("--auto")
             else:
-                LOGGER.debug("Repository is up to date")
+                logger.debug("Repository is up to date")
         else:
-            LOGGER.debug("Cloning new repository")
+            logger.info("Cloning %s", path)
             git.Repo.clone_from(url, local_path, **kwargs)
         if updated_at:
             os.utime(local_path, times=(local_path.stat().st_atime, updated_at))
     except git.GitCommandError as e:
-        LOGGER.error('Git error %s "%s"', path, " ".join(e.command))
+        logger.error('Git error %s "%s"', path, " ".join(e.command))
         return local_path, False
     except Exception as e:
-        LOGGER.error('Unhandled error %s "%s"', path, " ".join(e.command))
+        logger.error('Unhandled error %s "%s"', path, " ".join(e.command))
         return local_path, False
     return local_path, True
 
@@ -282,7 +292,9 @@ Token creation:
         local_paths = []
 
         iterable = concurrent.futures.as_completed(
-            executor.submit(download_repo, directory, *target, depth=args.depth)
+            executor.submit(
+                download_repo, directory, *target, log_level=log_level, depth=args.depth
+            )
             for target in sorted(targets)
         )
 
