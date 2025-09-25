@@ -16,6 +16,18 @@ Maintain local backups of *all Git repositories* belonging to a user or group.
 * [Arch Linux](https://aur.archlinux.org/packages/cloneholio/)
 * [PyPI](https://pypi.org/pypi/cloneholio)
 
+## Token Setup
+
+**GitHub**
+
+Create a [personal access token (Tokens (classic))](https://github.com/settings/tokens)) with the following permissions:
+- `repo:status`
+
+**GitLab**
+
+Create a [personal access token](https://gitlab.com/profile/personal_access_tokens) with the following permissions:
+- `api` (Access the authenticated user's API)
+
 ## Example
 
 This will back up all repositories owned by the [python](https://github.com/python) organization on GitHub.
@@ -41,15 +53,6 @@ usage: cloneholio [-h] [-n NUM_PROCESSES] [-d DIRECTORY] -t TOKEN
 
 Maintain local backups of all Git repositories belonging to a user or group.
 
-Token creation:
-
-- **GitLab**
-  - Permissions: api
-  - URL: https://gitlab.com/profile/personal_access_tokens
-
-- **GitHub**
-  - Permissions: repo:status
-  - URL: https://github.com/settings/tokens/new
 
 positional arguments:
   paths
