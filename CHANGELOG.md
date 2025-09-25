@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 0.15.1 (2025-09-25)
 - Fix logging of some errors
 
 ## 0.15.0 (2025-09-22)
