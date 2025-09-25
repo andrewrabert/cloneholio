@@ -4,6 +4,8 @@ import urllib.parse
 
 import github
 
+from . import errors
+
 
 LOGGER = logging.getLogger("cloneholio")
 
@@ -92,11 +94,19 @@ def get_repos(
                     repos.append(repo)
             except github.UnknownObjectException:
                 LOGGER.warning("GitHub repo not found: %s", path)
+            except github.GithubException as e:
+                raise errors.ProviderException(
+                    f"GitHub API error for {path}: {e}"
+                ) from e
         else:
             try:
                 repos.extend(api.get_user(path_user).get_repos())
             except github.UnknownObjectException:
                 LOGGER.warning("GitHub user not found: %s", path)
+            except github.GithubException as e:
+                raise errors.ProviderException(
+                    f"GitHub API error for user {path_user}: {e}"
+                ) from e
 
         repos.extend(get_auth_user_private_repos(api))
 

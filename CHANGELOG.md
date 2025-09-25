@@ -1,5 +1,8 @@
 # Changelog
 
+## Next
+- Fix logging of some errors
+
 ## 0.15.0 (2025-09-22)
 - Add support for GitHub Enterprise
 - Add `--all` flag

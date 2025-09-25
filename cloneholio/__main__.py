@@ -14,6 +14,7 @@ import tqdm
 
 import cloneholio.github
 import cloneholio.gitlab
+from cloneholio import errors
 
 LOGGER = logging.getLogger("cloneholio")
 
@@ -80,7 +81,7 @@ def download_repo(
         logger.error('Git error %s "%s"', path, " ".join(e.command))
         return local_path, False
     except Exception as e:
-        logger.error('Unhandled error %s "%s"', path, " ".join(e.command))
+        logger.error('Unhandled error %s "%s"', path, str(e))
         return local_path, False
     return local_path, True
 
@@ -271,15 +272,21 @@ Token creation:
     exclude = set(args.exclude)
     LOGGER.debug("Excluded paths: %s", exclude)
     targets = set()
-    for path, url, last_activity_at, default_branch in repos:
-        split_path = path.split("/")
-        parts = {"/".join(split_path[0:i]) for i in range(1, len(split_path) + 1)}
-        if not exclude.intersection(parts):
-            if args.list:
-                print(path)
-            targets.add((path, url, last_activity_at, default_branch))
-        else:
-            LOGGER.debug("Excluding repository: %s (matches exclusion pattern)", path)
+    try:
+        for path, url, last_activity_at, default_branch in repos:
+            split_path = path.split("/")
+            parts = {"/".join(split_path[0:i]) for i in range(1, len(split_path) + 1)}
+            if not exclude.intersection(parts):
+                if args.list:
+                    print(path)
+                targets.add((path, url, last_activity_at, default_branch))
+            else:
+                LOGGER.debug(
+                    "Excluding repository: %s (matches exclusion pattern)", path
+                )
+    except errors.ProviderException as e:
+        LOGGER.error("%s", e)
+        sys.exit(1)
 
     if args.list:
         parser.exit()
