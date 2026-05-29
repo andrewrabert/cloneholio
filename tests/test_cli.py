@@ -1,5 +1,5 @@
-import unittest
 import subprocess
+import unittest
 
 
 class CLITests(unittest.TestCase):
@@ -15,7 +15,8 @@ class CLITests(unittest.TestCase):
 
     def test_invalid_provider(self):
         process = subprocess.run(
-            ["cloneholio", "-p", "microsofthub", "-t", "123"], stderr=subprocess.PIPE
+            ["cloneholio", "-p", "microsofthub", "-t", "123"],
+            stderr=subprocess.PIPE,
         )
         self.assertEqual(process.returncode, 2)
         self.assertEqual(

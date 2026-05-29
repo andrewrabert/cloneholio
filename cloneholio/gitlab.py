@@ -3,7 +3,6 @@ import urllib.parse
 import arrow
 import requests
 
-
 GITLAB_URL = "https://gitlab.com"
 
 
@@ -13,7 +12,13 @@ def get_groups(token, insecure, base_url):
 
 
 def get_repos(
-    path, token, insecure=False, base_url=None, archived=None, is_fork=None, all=False
+    path,
+    token,
+    insecure=False,
+    base_url=None,
+    archived=None,
+    is_fork=None,
+    all=False,
 ):
     api = GitLab(url=base_url, token=token)
 

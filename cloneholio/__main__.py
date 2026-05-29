@@ -7,10 +7,10 @@ import os
 import pathlib
 import shutil
 import sys
-import urllib3
 
 import git
 import tqdm
+import urllib3
 
 import cloneholio.github
 import cloneholio.gitlab
@@ -25,11 +25,19 @@ except importlib.metadata.PackageNotFoundError:
 
 
 def download_repo(
-    directory, path, url, last_activity_at, default_branch, log_level=None, **kwargs
+    directory,
+    path,
+    url,
+    last_activity_at,
+    default_branch,
+    log_level=None,
+    **kwargs,
 ):
     # Configure logging in the child process if log_level is provided
     if log_level is not None:
-        logging.basicConfig(level=log_level, format="%(levelname)s %(message)s")
+        logging.basicConfig(
+            level=log_level, format="%(levelname)s %(message)s"
+        )
 
     logger = logging.getLogger("cloneholio")
 
@@ -42,7 +50,9 @@ def download_repo(
     )
     local_path = pathlib.Path(directory, path)
     updated_at = last_activity_at.timestamp() if last_activity_at else None
-    logger.debug("Local path: %s, Updated timestamp: %s", local_path, updated_at)
+    logger.debug(
+        "Local path: %s, Updated timestamp: %s", local_path, updated_at
+    )
     try:
         if local_path.exists():
             logger.debug("Repository already exists locally")
@@ -63,7 +73,9 @@ def download_repo(
                 if repo.branches:
                     if local_branch != default_branch:
                         logger.warning(
-                            "Switching from %s to %s", local_branch, default_branch
+                            "Switching from %s to %s",
+                            local_branch,
+                            default_branch,
                         )
                         repo.git.checkout(default_branch)
                     logger.info("Pulling %s", path)
@@ -76,7 +88,9 @@ def download_repo(
             logger.info("Cloning %s", path)
             git.Repo.clone_from(url, local_path, **kwargs)
         if updated_at:
-            os.utime(local_path, times=(local_path.stat().st_atime, updated_at))
+            os.utime(
+                local_path, times=(local_path.stat().st_atime, updated_at)
+            )
     except git.GitCommandError as e:
         logger.error('Git error %s "%s"', path, " ".join(e.command))
         return local_path, False
@@ -147,7 +161,9 @@ Token creation:
 
     group_remote = parser.add_argument_group("remote configuration")
     group_remote.add_argument("-t", "--token", required=True)
-    group_remote.add_argument("-p", "--provider", choices=PROVIDER_FUNCTIONS.keys())
+    group_remote.add_argument(
+        "-p", "--provider", choices=PROVIDER_FUNCTIONS.keys()
+    )
     group_remote.add_argument(
         "--insecure", action="store_true", help="Ignore SSL errors"
     )
@@ -160,7 +176,9 @@ Token creation:
         help="Paths to exclude from backup",
     )
     group_remote.add_argument(
-        "--exclude-archived", action="store_true", help="exclude archived repositories"
+        "--exclude-archived",
+        action="store_true",
+        help="exclude archived repositories",
     )
     group_remote.add_argument(
         "--exclude-forks",
@@ -171,7 +189,9 @@ Token creation:
     group_local = parser.add_argument_group("local configuration")
     group_local.add_argument("-d", "--directory", default=".")
     group_local.add_argument(
-        "--remove-orphans", action="store_true", help="Remove orphaned directories"
+        "--remove-orphans",
+        action="store_true",
+        help="Remove orphaned directories",
     )
 
     parser.add_argument(
@@ -182,7 +202,10 @@ Token creation:
     )
     output_mutex = parser.add_mutually_exclusive_group()
     output_mutex.add_argument(
-        "-q", "--quiet", action="store_true", help="Suppress informational output"
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress informational output",
     )
     output_mutex.add_argument(
         "-v", "--verbose", action="store_true", help="Enable debug logs"
@@ -191,7 +214,9 @@ Token creation:
         "--progress", action="store_true", help="Show progress bar"
     )
     parser.add_argument(
-        "--list", action="store_true", help="List remote repositories then exit."
+        "--list",
+        action="store_true",
+        help="List remote repositories then exit.",
     )
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument(
@@ -239,9 +264,13 @@ Token creation:
                 "Getting all organizations from GitHub - using optimized single call"
             )
             # For GitHub, use a single optimized call instead of per-organization calls
-            paths = {None}  # Use None as a special marker for the all=True call
+            paths = {
+                None
+            }  # Use None as a special marker for the all=True call
         else:
-            LOGGER.warning("--all is only supported for GitHub and GitLab providers")
+            LOGGER.warning(
+                "--all is only supported for GitHub and GitLab providers"
+            )
         LOGGER.debug("Paths after adding all: %s", paths)
 
     # Handle GitHub --all case with optimized single API call
@@ -276,14 +305,18 @@ Token creation:
     try:
         for path, url, last_activity_at, default_branch in repos:
             split_path = path.split("/")
-            parts = {"/".join(split_path[0:i]) for i in range(1, len(split_path) + 1)}
+            parts = {
+                "/".join(split_path[0:i])
+                for i in range(1, len(split_path) + 1)
+            }
             if not exclude.intersection(parts):
                 if args.list:
                     print(path)
                 targets.add((path, url, last_activity_at, default_branch))
             else:
                 LOGGER.debug(
-                    "Excluding repository: %s (matches exclusion pattern)", path
+                    "Excluding repository: %s (matches exclusion pattern)",
+                    path,
                 )
     except errors.ProviderException as e:
         LOGGER.error("%s", e)
@@ -295,19 +328,27 @@ Token creation:
     total_repos = len(targets)
     LOGGER.debug("Total repositories to process: %d", total_repos)
     LOGGER.debug("Using %d processes", args.num_processes)
-    with concurrent.futures.ProcessPoolExecutor(args.num_processes) as executor:
+    with concurrent.futures.ProcessPoolExecutor(
+        args.num_processes
+    ) as executor:
         failures = 0
         local_paths = []
 
         iterable = concurrent.futures.as_completed(
             executor.submit(
-                download_repo, directory, *target, log_level=log_level, depth=args.depth
+                download_repo,
+                directory,
+                *target,
+                log_level=log_level,
+                depth=args.depth,
             )
             for target in sorted(targets)
         )
 
         if args.progress and sys.stdout.isatty():
-            iterable = tqdm.tqdm(iterable, dynamic_ncols=True, total=total_repos)
+            iterable = tqdm.tqdm(
+                iterable, dynamic_ncols=True, total=total_repos
+            )
 
         for future in iterable:
             local_path, is_success = future.result()

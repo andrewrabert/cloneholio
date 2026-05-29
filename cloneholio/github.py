@@ -6,7 +6,6 @@ import github
 
 from . import errors
 
-
 LOGGER = logging.getLogger("cloneholio")
 
 
@@ -20,8 +19,10 @@ def get_organizations(token, insecure=False, base_url=None):
 
     if base_url is not None:
         # Fixes bug in upstream PyGithub
-        api._Github__requester._Requester__makeAbsoluteUrl = _make_absolute_url.__get__(
-            api._Github__requester, github.Requester.Requester
+        api._Github__requester._Requester__makeAbsoluteUrl = (
+            _make_absolute_url.__get__(
+                api._Github__requester, github.Requester.Requester
+            )
         )
 
     organizations = []
@@ -69,8 +70,10 @@ def get_repos(
 
     if base_url is not None:
         # Fixes bug in upstream PyGithub
-        api._Github__requester._Requester__makeAbsoluteUrl = _make_absolute_url.__get__(
-            api._Github__requester, github.Requester.Requester
+        api._Github__requester._Requester__makeAbsoluteUrl = (
+            _make_absolute_url.__get__(
+                api._Github__requester, github.Requester.Requester
+            )
         )
 
     repos = []
