@@ -41,6 +41,7 @@ packages = ["cloneholio"]
 [dependency-groups]
 dev = [
     "pytest>=6.0.0",
+    "ruff",
 ]
 
 [tool.pytest.ini_options]
