@@ -6,6 +6,14 @@ import github
 
 
 class GitHubTests(unittest.TestCase):
+    def setUp(self):
+        cloneholio.github.get_auth_user_private_repos.cache_clear()
+
+    @mock.patch.object(
+        cloneholio.github.github.Github,
+        "get_user",
+        return_value=mock.Mock(get_repos=mock.Mock(return_value=[])),
+    )
     @mock.patch.object(
         cloneholio.github.github.Github,
         "get_repo",

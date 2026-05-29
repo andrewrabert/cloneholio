@@ -10,7 +10,7 @@ class CLITests(unittest.TestCase):
         self.assertEqual(process.returncode, 2)
         self.assertEqual(
             process.stderr.decode().split("\n")[-2],
-            "cloneholio: error: must specifiy at least --all-groups or a path(s)",  # noqa: E501
+            "cloneholio: error: must specifiy at least --all or a path(s)",  # noqa: E501
         )
 
     def test_invalid_provider(self):
