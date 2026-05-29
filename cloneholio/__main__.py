@@ -138,6 +138,7 @@ Token creation:
 
     parser.add_argument(
         "-n",
+        "--num-processes",
         dest="num_processes",
         help="Number of processes to use",
         type=int,
