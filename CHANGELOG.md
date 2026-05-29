@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.0 (2026-05-29)
+- Add `--mirror` flag to maintain bare mirrors of all refs
+- Add `--prune` flag to prune local refs deleted upstream (with `--mirror`)
+
 ## 0.15.1 (2025-09-25)
 - Fix logging of some errors
 
