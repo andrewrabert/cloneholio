@@ -31,7 +31,9 @@ def download_repo(
     last_activity_at,
     default_branch,
     log_level=None,
-    **kwargs,
+    mirror=False,
+    prune=False,
+    depth=False,
 ):
     # Configure logging in the child process if log_level is provided
     if log_level is not None:
@@ -57,36 +59,60 @@ def download_repo(
         if local_path.exists():
             logger.debug("Repository already exists locally")
             repo = git.Repo(local_path)
-            local_branch = str(repo.active_branch)
-            logger.debug("Current local branch: %s", local_branch)
-            if (
-                not updated_at
-                or local_path.stat().st_mtime != updated_at
-                or local_branch != default_branch
-            ):
-                for remote in repo.remotes:
-                    logger.debug("Updating remote: %s", remote.name)
-                    remote.set_url(url)
-                    remote.update()
-                    if remote.refs:
-                        remote.fetch()
-                if repo.branches:
-                    if local_branch != default_branch:
-                        logger.warning(
-                            "Switching from %s to %s",
-                            local_branch,
-                            default_branch,
-                        )
-                        repo.git.checkout(default_branch)
-                    logger.info("Pulling %s", path)
-                    repo.remote().pull()
-                logger.debug("Running git gc on updated repository")
-                repo.git.gc("--auto")
+            if mirror:
+                if not updated_at or local_path.stat().st_mtime != updated_at:
+                    for remote in repo.remotes:
+                        logger.debug("Updating remote: %s", remote.name)
+                        remote.set_url(url)
+                    logger.info("Fetching %s", path)
+                    fetch_args = ["origin", "+refs/*:refs/*"]
+                    if prune:
+                        fetch_args.insert(0, "--prune")
+                    repo.git.fetch(*fetch_args)
+                    logger.debug("Running git gc on updated repository")
+                    repo.git.gc("--auto")
+                else:
+                    logger.debug("Repository is up to date")
             else:
-                logger.debug("Repository is up to date")
+                local_branch = str(repo.active_branch)
+                logger.debug("Current local branch: %s", local_branch)
+                if (
+                    not updated_at
+                    or local_path.stat().st_mtime != updated_at
+                    or local_branch != default_branch
+                ):
+                    for remote in repo.remotes:
+                        logger.debug("Updating remote: %s", remote.name)
+                        remote.set_url(url)
+                        remote.update()
+                        if remote.refs:
+                            remote.fetch()
+                    if repo.branches:
+                        if local_branch != default_branch:
+                            logger.warning(
+                                "Switching from %s to %s",
+                                local_branch,
+                                default_branch,
+                            )
+                            repo.git.checkout(default_branch)
+                        logger.info("Pulling %s", path)
+                        repo.remote().pull()
+                    logger.debug("Running git gc on updated repository")
+                    repo.git.gc("--auto")
+                else:
+                    logger.debug("Repository is up to date")
         else:
             logger.info("Cloning %s", path)
-            git.Repo.clone_from(url, local_path, **kwargs)
+            clone_kwargs = {}
+            if depth:
+                clone_kwargs["depth"] = depth
+            if mirror:
+                clone_kwargs["mirror"] = True
+            repo = git.Repo.clone_from(url, local_path, **clone_kwargs)
+            if mirror:
+                # Disable mirror auto-prune; pruning is controlled
+                # explicitly via the --prune fetch flag on updates.
+                repo.git.config("remote.origin.mirror", "false")
         if updated_at:
             os.utime(
                 local_path, times=(local_path.stat().st_atime, updated_at)
@@ -194,11 +220,24 @@ Token creation:
         help="Remove orphaned directories",
     )
 
-    parser.add_argument(
+    clone_mutex = parser.add_mutually_exclusive_group()
+    clone_mutex.add_argument(
         "--depth",
         type=int,
         default=False,
         help="Corresponds to the git clone --depth option",
+    )
+    clone_mutex.add_argument(
+        "--mirror",
+        action="store_true",
+        help="Maintain bare mirrors (git clone --mirror).\n"
+        "Captures all refs; no working tree.",
+    )
+    parser.add_argument(
+        "--prune",
+        action="store_true",
+        help="With --mirror, prune local refs deleted upstream.\n"
+        "Default keeps them.",
     )
     output_mutex = parser.add_mutually_exclusive_group()
     output_mutex.add_argument(
@@ -231,6 +270,9 @@ Token creation:
     if not args.all and not args.paths:
         parser.error("must specifiy at least --all or a path(s)")
         parser.exit(1)
+
+    if args.prune and not args.mirror:
+        parser.error("--prune requires --mirror")
 
     if args.verbose:
         log_level = logging.DEBUG
@@ -341,6 +383,8 @@ Token creation:
                 *target,
                 log_level=log_level,
                 depth=args.depth,
+                mirror=args.mirror,
+                prune=args.prune,
             )
             for target in sorted(targets)
         )

@@ -46,25 +46,54 @@ INFO Finished "github" processing 62 repos with 0 failures
 
 ```
 $ cloneholio -h
-usage: cloneholio [-h] [-n NUM_PROCESSES] [-d DIRECTORY] -t TOKEN
-                  [-p {github,gitlab}] [--depth DEPTH] [--insecure]
-                  [-u BASE_URL] [--version]
-                  paths [paths ...]
+usage: cloneholio [-h] [-n NUM_PROCESSES] -t TOKEN [-p {github,gitlab}]
+                  [--insecure] [-u BASE_URL] [-e EXCLUDE] [--exclude-archived]
+                  [--exclude-forks] [-d DIRECTORY] [--remove-orphans]
+                  [--depth DEPTH | --mirror] [--prune] [-q | -v | --progress]
+                  [--list] [--version] [--all]
+                  [paths ...]
 
 Maintain local backups of all Git repositories belonging to a user or group.
 
+Token creation:
+  - GitLab
+    Permissions:  api
+    URL:  https://gitlab.com/profile/personal_access_tokens
+
+  - GitHub
+    Permissions:  repo:status
+    URL:  https://github.com/settings/tokens/new
 
 positional arguments:
   paths
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  -n NUM_PROCESSES      Number of processes to use
-  -d DIRECTORY, --directory DIRECTORY
-  -t TOKEN, --token TOKEN
-  -p {github,gitlab}, --provider {github,gitlab}
+  -n, --num-processes NUM_PROCESSES
+                        Number of processes to use
   --depth DEPTH         Corresponds to the git clone --depth option
-  --insecure            Ignore SSL errors
-  -u BASE_URL, --base-url BASE_URL
+  --mirror              Maintain bare mirrors (git clone --mirror).
+                        Captures all refs; no working tree.
+  --prune               With --mirror, prune local refs deleted upstream.
+                        Default keeps them.
+  -q, --quiet           Suppress informational output
+  -v, --verbose         Enable debug logs
+  --progress            Show progress bar
+  --list                List remote repositories then exit.
   --version             show program's version number and exit
+  --all                 Get all groups (GitLab) or organizations (GitHub)
+
+remote configuration:
+  -t, --token TOKEN
+  -p, --provider {github,gitlab}
+  --insecure            Ignore SSL errors
+  -u, --base-url BASE_URL
+  -e, --exclude EXCLUDE
+                        Paths to exclude from backup
+  --exclude-archived    exclude archived repositories
+  --exclude-forks       exclude repositories that are forks
+
+local configuration:
+  -d, --directory DIRECTORY
+  --remove-orphans      Remove orphaned directories
 ```
