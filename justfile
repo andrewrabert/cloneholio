@@ -1,6 +1,4 @@
-[private]
-default:
-    @just --list
+set default-list := true
 
 # Run cloneholio with the given arguments
 run *args:
