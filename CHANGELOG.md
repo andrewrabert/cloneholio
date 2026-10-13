@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.16.1 (2026-10-13)
+- Include git error output in Git error log
+
 ## 0.16.0 (2026-05-29)
 - Add `--mirror` flag to maintain bare mirrors of all refs
 - Add `--prune` flag to prune local refs deleted upstream (with `--mirror`)
