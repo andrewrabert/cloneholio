@@ -53,7 +53,7 @@ def get_auth_user_private_repos(api):
     return list(user.get_repos(visibility="private"))
 
 
-def get_repos(
+async def get_repos(
     path,
     token,
     insecure=False,
@@ -113,6 +113,7 @@ def get_repos(
 
         repos.extend(get_auth_user_private_repos(api))
 
+    results = []
     for repo in repos:
         if not all:
             user, name = repo.full_name.split("/")
@@ -125,7 +126,10 @@ def get_repos(
             continue
         if repo.archived and archived is False:
             continue
-        yield repo.full_name, repo.ssh_url, repo.pushed_at, repo.default_branch
+        results.append(
+            (repo.full_name, repo.ssh_url, repo.pushed_at, repo.default_branch)
+        )
+    return results
 
 
 def _make_absolute_url(self, url):

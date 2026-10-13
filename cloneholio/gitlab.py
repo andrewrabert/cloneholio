@@ -1,17 +1,17 @@
 import urllib.parse
 
 import arrow
-import requests
+import httpx2
 
 GITLAB_URL = "https://gitlab.com"
 
 
-def get_groups(token, insecure, base_url):
-    api = GitLab(url=base_url, token=token)
-    return sorted(api.groups())
+async def get_groups(token, insecure, base_url):
+    api = GitLab(url=base_url, token=token, insecure=insecure)
+    return sorted(await api.groups())
 
 
-def get_repos(
+async def get_repos(
     path,
     token,
     insecure=False,
@@ -20,10 +20,10 @@ def get_repos(
     is_fork=None,
     all=False,
 ):
-    api = GitLab(url=base_url, token=token)
+    api = GitLab(url=base_url, token=token, insecure=insecure)
 
     projects = []
-    for project in api.projects(path, archived=archived, fork=is_fork):
+    for project in await api.projects(path, archived=archived, fork=is_fork):
         last_activity_at = project["last_activity_at"]
         if last_activity_at is not None:
             last_activity_at = arrow.get(last_activity_at).datetime
@@ -39,13 +39,19 @@ def get_repos(
 
 
 class GitLab:
-    def __init__(self, token=None, url=None):
-        self.url = url if url is not None else "https://gitlab.com"
-        self.session = requests.Session()
+    def __init__(self, token=None, url=None, insecure=False):
+        self.url = url if url is not None else GITLAB_URL
+        headers = {}
         if token is not None:
-            self.session.headers["Authorization"] = f"Bearer {token}"
+            headers["Authorization"] = f"Bearer {token}"
+        self.session = httpx2.AsyncClient(
+            headers=headers,
+            verify=not insecure,
+            follow_redirects=True,
+            timeout=None,
+        )
 
-    def groups(self):
+    async def groups(self):
         qs = urllib.parse.urlencode(
             {
                 "all_available": "true",
@@ -58,7 +64,7 @@ class GitLab:
 
         groups = set()
         while url:
-            response = self.session.get(url)
+            response = await self.session.get(url)
             response.raise_for_status()
 
             for item in response.json():
@@ -71,19 +77,19 @@ class GitLab:
 
         return groups
 
-    def projects(self, *args, **kwargs):
+    async def projects(self, *args, **kwargs):
         try:
-            return [self.project(*args, **kwargs)]
+            return [await self.project(*args, **kwargs)]
         except NotFound:
             try:
-                return self.user_projects(*args, **kwargs)
+                return await self.user_projects(*args, **kwargs)
             except NotFound:
-                return self.group_projects(*args, **kwargs)
+                return await self.group_projects(*args, **kwargs)
 
-    def project(self, name, archived=None, fork=None):
+    async def project(self, name, archived=None, fork=None):
         safename = urllib.parse.quote(name, safe="")
         url = f"{self.url}/api/v4/projects/{safename}"
-        response = self.session.get(url)
+        response = await self.session.get(url)
         if response.status_code == 404:
             try:
                 message = response.json()["message"]
@@ -103,13 +109,13 @@ class GitLab:
         if path.lower() == name.lower():
             return project
 
-    def group_projects(self, *args, **kwargs):
-        return self._projects("groups", *args, **kwargs)
+    async def group_projects(self, *args, **kwargs):
+        return await self._projects("groups", *args, **kwargs)
 
-    def user_projects(self, *args, **kwargs):
-        return self._projects("users", *args, **kwargs)
+    async def user_projects(self, *args, **kwargs):
+        return await self._projects("users", *args, **kwargs)
 
-    def _projects(self, name_type, name, archived=None, fork=None):
+    async def _projects(self, name_type, name, archived=None, fork=None):
         name = urllib.parse.quote(name, safe="")
 
         query = {
@@ -126,7 +132,7 @@ class GitLab:
 
         projects = {}
         while url:
-            response = self.session.get(url)
+            response = await self.session.get(url)
             if response.status_code == 404:
                 try:
                     message = response.json()["message"]

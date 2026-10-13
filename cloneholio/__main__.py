@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import concurrent.futures
 import importlib.metadata
 import itertools
@@ -274,6 +275,10 @@ Token creation:
     if args.prune and not args.mirror:
         parser.error("--prune requires --mirror")
 
+    return asyncio.run(run(args))
+
+
+async def run(args):
     if args.verbose:
         log_level = logging.DEBUG
     elif args.quiet or args.progress:
@@ -297,7 +302,7 @@ Token creation:
             LOGGER.debug("Getting all groups from GitLab")
             paths.update(
                 path.split("/")[0].lower()
-                for path in cloneholio.gitlab.get_groups(
+                for path in await cloneholio.gitlab.get_groups(
                     args.token, args.insecure, args.base_url
                 )
             )
@@ -317,7 +322,7 @@ Token creation:
 
     # Handle GitHub --all case with optimized single API call
     if args.all and args.provider == "github":
-        repos = PROVIDER_FUNCTIONS[args.provider](
+        repos = await PROVIDER_FUNCTIONS[args.provider](
             None,
             args.token,
             args.insecure,
@@ -329,7 +334,7 @@ Token creation:
     else:
         repos = itertools.chain(
             *[
-                PROVIDER_FUNCTIONS[args.provider](
+                await PROVIDER_FUNCTIONS[args.provider](
                     path,
                     args.token,
                     args.insecure,
@@ -362,10 +367,10 @@ Token creation:
                 )
     except errors.ProviderException as e:
         LOGGER.error("%s", e)
-        sys.exit(1)
+        return 1
 
     if args.list:
-        parser.exit()
+        return 0
 
     total_repos = len(targets)
     LOGGER.debug("Total repositories to process: %d", total_repos)
@@ -420,8 +425,9 @@ Token creation:
         len(orphans),
     )
     if failures:
-        sys.exit(1)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

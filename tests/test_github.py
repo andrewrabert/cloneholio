@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from unittest import mock
 
@@ -24,5 +25,7 @@ class GitHubTests(unittest.TestCase):
         cloneholio.github.github.Github, "__init__", return_value=None
     )
     def test_repo_not_found(self, *_):
-        repos = cloneholio.github.get_repos("fake/repo", mock.sentinel.TOKEN)
-        self.assertEqual([], list(repos))
+        repos = asyncio.run(
+            cloneholio.github.get_repos("fake/repo", mock.sentinel.TOKEN)
+        )
+        self.assertEqual([], repos)

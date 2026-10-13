@@ -16,7 +16,7 @@ dependencies = [
     "arrow",
     "gitpython",
     "pygithub",
-    "requests",
+    "httpx2",
     "tqdm",
     "urllib3",
 ]
