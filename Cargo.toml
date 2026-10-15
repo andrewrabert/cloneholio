@@ -1,6 +1,6 @@
 [package]
 name = "cloneholio"
-version = "0.17.0-dev"
+version = "0.17.0"
 edition = "2024"
 description = "Maintain local backups of all Git repositories belonging to a user or group"
 license = "MIT"
