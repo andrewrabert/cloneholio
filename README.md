@@ -1,6 +1,6 @@
 # cloneholio
 
-[![PyPI Version](https://img.shields.io/pypi/v/cloneholio.svg)](https://pypi.org/pypi/cloneholio) [![AUR Version](https://img.shields.io/aur/version/cloneholio.svg)](https://aur.archlinux.org/packages/cloneholio)
+[![AUR Version](https://img.shields.io/aur/version/cloneholio.svg)](https://aur.archlinux.org/packages/cloneholio)
 
 Maintain local backups of *all Git repositories* belonging to a user or group.
 
@@ -9,12 +9,12 @@ Maintain local backups of *all Git repositories* belonging to a user or group.
 - Supports both GitHub and GitLab.
 - Back up *all repositories* owned by users, groups, and subgroups.
 - Back up individual repositories.
-- Scale to a configurable number of processes.
+- Sync a configurable number of repositories concurrently.
 
 ## Installation
 
 * [Arch Linux](https://aur.archlinux.org/packages/cloneholio/)
-* [PyPI](https://pypi.org/pypi/cloneholio)
+* From source: `cargo install --git https://github.com/andrewrabert/cloneholio`
 
 ## Token Setup
 
@@ -34,26 +34,49 @@ This will back up all repositories owned by the [python](https://github.com/pyth
 
 ```
 $ cloneholio -t TOKEN -p github python
-INFO Begin "github" processing using "/home/draje/Code/GitLab/nvllsvm/cloneholio"
-INFO Processing python/asyncio
-INFO Processing python/bpo-builder
+ INFO Begin "github" processing using "/home/draje/Code/GitLab/nvllsvm/cloneholio"
+ INFO Cloning python/asyncio
 ...
-INFO Processing python/typing
-INFO Finished "github" processing 62 repos with 0 failures
+ INFO Pulling python/typing
+ INFO Finished "github" processing 62 repos with 0 failures and 0 orphans
 ```
 
 ## Help
 
 ```
 $ cloneholio -h
-usage: cloneholio [-h] [-n NUM_PROCESSES] -t TOKEN [-p {github,gitlab}]
-                  [--insecure] [-u BASE_URL] [-e EXCLUDE] [--exclude-archived]
-                  [--exclude-forks] [-d DIRECTORY] [--remove-orphans]
-                  [--depth DEPTH | --mirror] [--prune] [-q | -v | --progress]
-                  [--list] [--version] [--all]
-                  [paths ...]
-
 Maintain local backups of all Git repositories belonging to a user or group.
+
+Usage: cloneholio [OPTIONS] --token <TOKEN> --provider <PROVIDER> [PATHS]...
+
+Arguments:
+  [PATHS]...
+
+Options:
+  -n, --num-processes <NUM_PROCESSES>  Number of repositories to sync concurrently [default: 1]
+      --depth <DEPTH>                  Corresponds to the git clone --depth option
+      --mirror                         Maintain bare mirrors (git clone --mirror). Captures all refs; no working tree
+      --prune                          With --mirror, prune local refs deleted upstream. Default keeps them
+  -q, --quiet                          Suppress informational output
+  -v, --verbose                        Enable debug logs
+      --progress                       Show progress bar
+      --list                           List remote repositories then exit
+      --all                            Get all groups (GitLab) or organizations (GitHub)
+  -h, --help                           Print help
+  -V, --version                        Print version
+
+Remote configuration:
+  -t, --token <TOKEN>
+  -p, --provider <PROVIDER>  [possible values: github, gitlab]
+      --insecure             Ignore SSL errors
+  -u, --base-url <BASE_URL>
+  -e, --exclude <EXCLUDE>    Paths to exclude from backup
+      --exclude-archived     Exclude archived repositories
+      --exclude-forks        Exclude repositories that are forks
+
+Local configuration:
+  -d, --directory <DIRECTORY>  [default: .]
+      --remove-orphans         Remove orphaned directories
 
 Token creation:
   - GitLab
@@ -63,37 +86,4 @@ Token creation:
   - GitHub
     Permissions:  repo:status
     URL:  https://github.com/settings/tokens/new
-
-positional arguments:
-  paths
-
-options:
-  -h, --help            show this help message and exit
-  -n, --num-processes NUM_PROCESSES
-                        Number of processes to use
-  --depth DEPTH         Corresponds to the git clone --depth option
-  --mirror              Maintain bare mirrors (git clone --mirror).
-                        Captures all refs; no working tree.
-  --prune               With --mirror, prune local refs deleted upstream.
-                        Default keeps them.
-  -q, --quiet           Suppress informational output
-  -v, --verbose         Enable debug logs
-  --progress            Show progress bar
-  --list                List remote repositories then exit.
-  --version             show program's version number and exit
-  --all                 Get all groups (GitLab) or organizations (GitHub)
-
-remote configuration:
-  -t, --token TOKEN
-  -p, --provider {github,gitlab}
-  --insecure            Ignore SSL errors
-  -u, --base-url BASE_URL
-  -e, --exclude EXCLUDE
-                        Paths to exclude from backup
-  --exclude-archived    exclude archived repositories
-  --exclude-forks       exclude repositories that are forks
-
-local configuration:
-  -d, --directory DIRECTORY
-  --remove-orphans      Remove orphaned directories
 ```

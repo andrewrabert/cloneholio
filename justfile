@@ -1,37 +1,39 @@
 set default-list := true
 
-# Run cloneholio with the given arguments
+# Build the crates
+build:
+    @cargo build --manifest-path {{justfile_directory()}}/Cargo.toml
+
+# Run the tests
+test:
+    @cargo test --manifest-path {{justfile_directory()}}/Cargo.toml --workspace
+
+# Format the sources
+fmt:
+    @cargo fmt --all --manifest-path {{justfile_directory()}}/Cargo.toml
+
+# Verify formatting without writing
+fmt-check:
+    @cargo fmt --all --manifest-path {{justfile_directory()}}/Cargo.toml --check
+
+# Lint with clippy (warnings are errors)
+lint:
+    @cargo clippy --manifest-path {{justfile_directory()}}/Cargo.toml --workspace --all-targets -- -D warnings
+
+# Run all static checks + tests
+check: fmt-check lint test
+
+# List outdated dependencies
+outdated:
+    @cargo outdated --manifest-path {{justfile_directory()}}/Cargo.toml --workspace --root-deps-only
+
+# Update dependencies
+[positional-arguments]
+update *args:
+    @cargo update --manifest-path {{justfile_directory()}}/Cargo.toml "$@"
+
+# Run the binary
+[no-exit-message]
+[positional-arguments]
 run *args:
-    uv run cloneholio {{args}}
-
-# Install dependencies
-[group('dev')]
-setup:
-    uv sync
-
-# Build distribution packages
-[group('dev')]
-build: setup
-    uv build
-
-# Remove build artifacts
-[group('dev')]
-clean:
-    rm -rf .venv dist
-
-# Check linting and formatting without modifying files
-[group('check')]
-lint: setup
-    uv run ruff check
-    uv run ruff format --check
-
-# Fix lint issues and format the code
-[group('check')]
-format: setup
-    uv run ruff check --fix
-    uv run ruff format
-
-# Run the test suite
-[group('check')]
-test: setup
-    uv run pytest
+    @cargo run --manifest-path {{justfile_directory()}}/Cargo.toml --quiet -- "$@"
