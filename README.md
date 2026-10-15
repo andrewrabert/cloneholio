@@ -16,6 +16,39 @@ Maintain local backups of *all Git repositories* belonging to a user or group.
 * [Arch Linux](https://aur.archlinux.org/packages/cloneholio/)
 * From source: `cargo install --git https://github.com/andrewrabert/cloneholio`
 
+## Downloads
+
+Development builds from the latest successful CI run on `main`:
+
+### Android / Termux
+
+Install the aarch64 package repository:
+
+```sh
+echo "deb [trusted=yes] https://andrewrabert.github.io/cloneholio stable main" \
+  > "$PREFIX/etc/apt/sources.list.d/cloneholio.list"
+pkg update
+pkg install cloneholio
+```
+
+The repository is currently unsigned; `[trusted=yes]` explicitly trusts its packages.
+The [raw aarch64 build](https://nightly.link/andrewrabert/cloneholio/workflows/ci/main/cloneholio-aarch64-linux-android.zip)
+is also available.
+
+### Linux
+
+- glibc: [x86_64](https://nightly.link/andrewrabert/cloneholio/workflows/ci/main/cloneholio-x86_64-unknown-linux-gnu.zip) · [aarch64](https://nightly.link/andrewrabert/cloneholio/workflows/ci/main/cloneholio-aarch64-unknown-linux-gnu.zip)
+- musl: [x86_64](https://nightly.link/andrewrabert/cloneholio/workflows/ci/main/cloneholio-x86_64-unknown-linux-musl.zip) · [aarch64](https://nightly.link/andrewrabert/cloneholio/workflows/ci/main/cloneholio-aarch64-unknown-linux-musl.zip)
+
+### macOS
+
+- [Apple Silicon](https://nightly.link/andrewrabert/cloneholio/workflows/ci/main/cloneholio-aarch64-apple-darwin.zip)
+- [Intel](https://nightly.link/andrewrabert/cloneholio/workflows/ci/main/cloneholio-x86_64-apple-darwin.zip)
+
+### Windows
+
+- [x64](https://nightly.link/andrewrabert/cloneholio/workflows/ci/main/cloneholio-x86_64-pc-windows-msvc.zip)
+
 ## Token Setup
 
 **GitHub**
